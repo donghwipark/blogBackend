@@ -1,25 +1,17 @@
 const Koa = require('koa')
 const Router = require('koa-router')
+const bodyParser = require('koa-bodyparser')
+
+const api = require('./api')
 
 const app = new Koa()
 const router = new Router()
 
 // setting router
-router.get('/', (ctx) => {
-    ctx.body = 'Home'
-})
+router.use('/api', api.routes()) // using api routing
 
-router.get('/about/:name?', (ctx) => {
-    const {name} = ctx.params
-    // print depend on the name
-    ctx.body = name ? `Introducing ${name}` : "introducing"
-})
-
-router.get('/posts', (ctx) => {
-    const {id} = ctx.query
-    // print depend on the id
-    ctx.body = id ? `Post #${id}` : "No Post ID"
-})
+// Set bodyParser before Routing
+app.use(bodyParser())
 
 // apply router in app Instance
 app.use(router.routes()).use(router.allowedMethods())
