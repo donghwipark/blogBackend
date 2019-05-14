@@ -1,6 +1,38 @@
+const { ObjectId } = require('mongoose').Types
+
+exports.checkObjectId = (ctx, next) => {
+    const { id } = ctx.params
+
+    // Authorise fail
+    if(!ObjectId.isValid(id)) {
+        ctx.status = 400 // 400 Bad request
+        return null
+    }
+
+    return next() // Can set ctx.body properly after return next
+}
+
 const Post = require('models/post')
+const Joi = require('joi')
 
 exports.write = async (ctx) => {
+    // check the value which is not a object
+    const schema = Joi.object().keys({
+        title: Joi.string().required(), // required() means the must input 
+        body: Joi.string().required(),
+        tags: Joi.array().items(Joi.string()).required()
+    })
+
+    // First parameter is object to check, second is the schema
+    const result = Joi.validate(ctx.request.body, schema)
+
+    // response on error
+    if(result.error) {
+        ctx.status = 400
+        ctx.body = result.error
+        return
+    }
+
     const { title, body, tags } = ctx.request.body
 
     // Make New Post instance
