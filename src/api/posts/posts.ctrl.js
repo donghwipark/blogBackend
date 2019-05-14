@@ -1,119 +1,71 @@
-let postId = 1 // default of id
+const Post = require('models/post')
 
-const posts = [
-    {
-        id: 1,
-        title: 'title',
-        body: 'body'
+exports.write = async (ctx) => {
+    const { title, body, tags } = ctx.request.body
+
+    // Make New Post instance
+    const post = new Post({
+        title, body, tags
+    })
+
+    try {
+        await post.save()
+        ctx.body = post
+    } catch(e) {
+        // error on database
+        ctx.throw(e, 500)
     }
-]
-
-// write post
-exports.write = (ctx) => {
-     // can search request body in ctx.request.body
-    const {
-        title,
-        body
-    } = ctx.request.body
-
-    postId += 1 // add on previous postId
-
-    const post = { id: postId, title, body }
-    posts.push(post)
-    ctx.body = post
 }
 
-// Search post list
-exports.list = (ctx) => {
-    ctx.body = posts
+exports.list = async (ctx) => {
+    try {
+        const posts = await Post.find().exec()
+        ctx.body = posts
+    } catch(e) {
+        ctx.throw(e, 500)
+    }
 }
 
-// Search Post
-exports.read = (ctx) => {
+exports.read = async (ctx) => {
     const { id } = ctx.params
-
-    const post = posts.find(p => p.id.toString() === id)
-
-    // if there are no post send error
-    if(!post) {
-        ctx.status = 404
-        ctx.body = {
-            message: "there are no Post"
+    try {
+        const post = await Post.findById(id).exec()
+        // There are no post
+        if(!post) {
+            ctx.status = 404
+            return
         }
-        return
+        ctx.body = post
+    } catch(e) {
+        ctx.throw(e, 500)
     }
-
-    ctx.body = post
 }
 
-// Delete the Post
-exports.remove = (ctx) => {
+exports.remove = async (ctx) => {
     const { id } = ctx.params
-    // Check the post id order
-    const index = posts.findIndex(p => p.id.toString() === id)
-
-    // If there are no post send error
-    if(index === -1) {
-        ctx.status = 404
-        ctx.body = {
-            message: 'There are no post'
-        }
-        return
+    try {
+        await Post.findByIdAndRemove(id).exec()
+        ctx.status = 204
+    } catch(e) {
+        ctx.throw(e, 500)
     }
-
-    // Delete the item on the index
-    posts.splice(index, 1)
-    ctx.status = 204 // no Content 
 }
 
-// Post modify
-exports.replace = (ctx) => {
-    // Pu method using input and change whole data
+exports.update = async (ctx) => {
     const { id } = ctx.params
-
-    // check the order of the post id
-    const index = posts.findIndex(p => p.id.toString() === id)
-
-    // Send error on no post
-    if(index === -1) {
-        ctx.status = 404
-        ctx.body = {
-            message: 'no Post'
+    try {
+        const post = await Post.findByIdAndUpdate(id, ctx.request.body, {
+            new: true
+            // Can resend object on this setting
+            // If didn't set up, resend the object before upgrade
+        }).exec()
+        // if there are no Post
+        if(!post) {
+            ctx.status = 404
+            return
         }
-        return
+        ctx.body = post
+    } catch(e) {
+        ctx.throw(e, 500)
     }
-
-    // Cover the object
-    // Make new object after delete the information except the id
-    posts[index] = {
-        id,
-        ...ctx.request.body
-    }
-    ctx.body = posts[index]
 }
-
-// Post modify(Change the specific field)
-exports.update = (ctx) => {
-    // Patch method change the field
-    const { id } = ctx.params
-
-    // Check the post in id
-    const index = posts.findIndex(p => p.id.toString() === id)
-
-    // Send error if there are no post
-    if(index === -1){
-        ctx.status = 404
-        ctx.body = {
-            message: "there are no post"
-        }
-        return
-    }
-
-    // Cover  on previous information
-    posts[index] = {
-        ...posts[index],
-        ...ctx.request.body
-    }
-    ctx.body = posts[index]
-}
-

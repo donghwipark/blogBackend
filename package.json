@@ -6,16 +6,18 @@
   "author": "donghwipark <donghwipark@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "dotenv": "^8.0.0",
     "eslint": "^5.16.0",
     "koa": "^2.7.0",
     "koa-bodyparser": "^4.2.1",
-    "koa-router": "^7.4.0"
+    "koa-router": "^7.4.0",
+    "mongoose": "^5.5.7"
   },
   "devDependencies": {
     "nodemon": "^1.19.0"
   },
   "scripts": {
-    "start": "node src",
-    "start:dev": "nodemon --watch src/ src/index.js"
+    "start": "NODE_PATH=src node src",
+    "start:dev": "NODE_PATH=src nodemon --watch src/ src/index.js"
   }
 }
