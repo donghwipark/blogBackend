@@ -53,6 +53,11 @@ exports.list = async (ctx) => {
     // If there is no page, reply with 1
     // Change to number from string
     const page = parseInt(ctx.query.page || 1, 10)
+    const { tag } = ctx.query
+
+    const query = tag ? {
+        tags: tag // Find post who has tag in tags
+    } : {}
 
     // On page mistake
     if(page < 1) {
@@ -60,23 +65,23 @@ exports.list = async (ctx) => {
         return
     }
     try {
-        const posts = await Post.find()
+        const posts = await Post.find(query)
             .sort({_id: -1})
             .limit(10)
             .skip((page - 1) * 10)
             .lean()
             .exec()
-        const postCount = await Post.countDocuments().exec()
+        const postCount = await Post.countDocuments(query).exec()
         // tell last page
         // Set ctx.set on response header
         const limitBodyLength = post => ({
-            ...post.toJSON(),
-            body: post.body.length < 200 ? post.body : `${post.body.slice(0, 200)}...`
+            ...post,
+            body: post.body.length < 350 ? post.body : `${post.body.slice(0, 350)}...`
         })
-        ctx.set('Last-Page', Math.ceil(postCount / 10))
         ctx.body = posts.map(limitBodyLength)
+        ctx.set('Last-Page', Math.ceil(postCount / 10))
     } catch(e) {
-        ctx.throw(e, 500)
+        ctx.throw(500, e)
     }
 }
 
@@ -91,7 +96,7 @@ exports.read = async (ctx) => {
         }
         ctx.body = post
     } catch(e) {
-        ctx.throw(e, 500)
+        ctx.throw(500, e)
     }
 }
 
@@ -101,7 +106,7 @@ exports.remove = async (ctx) => {
         await Post.findByIdAndRemove(id).exec()
         ctx.status = 204
     } catch(e) {
-        ctx.throw(e, 500)
+        ctx.throw(500, e)
     }
 }
 
@@ -120,6 +125,6 @@ exports.update = async (ctx) => {
         }
         ctx.body = post
     } catch(e) {
-        ctx.throw(e, 500)
+        ctx.throw(500, e)
     }
 }
